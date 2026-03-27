@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ClipboardList, Plus, Filter, ChevronLeft, ChevronRight, Loader2,
   Trash2, Edit3, Check, X, Diamond, AlertTriangle, Calendar,
-  LayoutList, LayoutGrid, FileText,
+  LayoutList, LayoutGrid, FileText, Users,
 } from "lucide-react";
 import { useOrg } from "../../shell/OrgProvider.jsx";
 import {
@@ -21,6 +21,7 @@ import {
 import TimelineView from "./TimelineView.jsx";
 import DailyCallSheet from "./DailyCallSheet.jsx";
 import { useRealtimeSchedule } from "./useRealtimeSchedule.js";
+import CrewPanel from "./CrewPanel.jsx";
 
 // ── Helpers ──────────────────────────────────────────
 
@@ -195,6 +196,9 @@ export default function ProductionSchedule() {
   const [filterPhase, setFilterPhase] = useState("");
   const [filterOwner, setFilterOwner] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
+
+  // Crew panel state
+  const [crewItem, setCrewItem] = useState(null); // item whose crew panel is open
 
   // Timeline-specific state
   const [rooms, setRooms] = useState([]);
@@ -639,6 +643,11 @@ export default function ProductionSchedule() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
+                        <button onClick={() => setCrewItem(item)}
+                          className="p-1 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-500"
+                          title="Crew assignments">
+                          <Users size={14} />
+                        </button>
                         <button onClick={() => setEditingItem(item)}
                           className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600">
                           <Edit3 size={14} />
@@ -656,6 +665,13 @@ export default function ProductionSchedule() {
           </table>
         </div>
       ) : null}
+
+      {/* Crew Panel Overlay */}
+      {crewItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+          <CrewPanel item={crewItem} onClose={() => setCrewItem(null)} />
+        </div>
+      )}
     </div>
   );
 }

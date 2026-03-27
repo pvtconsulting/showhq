@@ -115,6 +115,67 @@ export async function deleteMilestone(id) {
   return { error };
 }
 
+// ── Crew Assignments ─────────────────────────────────
+
+/** Get crew assignments for a schedule item */
+export async function getCrewForItem(scheduleItemId) {
+  const { data, error } = await supabase
+    .from("crew_assignments")
+    .select("*, profiles(full_name, email)")
+    .eq("schedule_item_id", scheduleItemId)
+    .order("role", { ascending: true })
+    .order("created_at", { ascending: true });
+  return { data, error };
+}
+
+/** Get all crew assignments for an event (via schedule_items) */
+export async function getCrewForEvent(eventId) {
+  const { data, error } = await supabase
+    .from("crew_assignments")
+    .select("*, schedule_items!inner(id, event_id, title, date, start_time, end_time, department), profiles(full_name, email)")
+    .eq("schedule_items.event_id", eventId)
+    .order("created_at", { ascending: true });
+  return { data, error };
+}
+
+/** Create a crew assignment */
+export async function createCrewAssignment(assignment) {
+  const { data, error } = await supabase
+    .from("crew_assignments")
+    .insert(assignment)
+    .select("*, profiles(full_name, email)")
+    .single();
+  return { data, error };
+}
+
+/** Update a crew assignment */
+export async function updateCrewAssignment(id, updates) {
+  const { data, error } = await supabase
+    .from("crew_assignments")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*, profiles(full_name, email)")
+    .single();
+  return { data, error };
+}
+
+/** Delete a crew assignment */
+export async function deleteCrewAssignment(id) {
+  const { error } = await supabase
+    .from("crew_assignments")
+    .delete()
+    .eq("id", id);
+  return { error };
+}
+
+/** Crew role options */
+export const CREW_ROLES = [
+  { value: "lead", label: "Lead" },
+  { value: "crew", label: "Crew" },
+  { value: "vendor_contact", label: "Vendor Contact" },
+  { value: "supervisor", label: "Supervisor" },
+];
+
 // ── Daily Calls ──────────────────────────────────────
 
 /** Get or create the daily call for a schedule + date */
