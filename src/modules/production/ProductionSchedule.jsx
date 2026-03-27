@@ -9,14 +9,16 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ClipboardList, Plus, Filter, ChevronLeft, ChevronRight, Loader2,
   Trash2, Edit3, Check, X, Diamond, AlertTriangle, Calendar,
+  LayoutList, LayoutGrid,
 } from "lucide-react";
 import { useOrg } from "../../shell/OrgProvider.jsx";
 import {
   getOrCreateSchedule, getScheduleItems, createScheduleItem,
   updateScheduleItem, deleteScheduleItem, getMilestones,
-  createMilestone, deleteMilestone,
+  createMilestone, deleteMilestone, getEventRooms, getRehearsalSlots,
   PHASES, DEPARTMENTS, STATUSES,
 } from "./production-queries.js";
+import TimelineView from "./TimelineView.jsx";
 
 // ── Helpers ──────────────────────────────────────────
 
@@ -183,6 +185,7 @@ export default function ProductionSchedule() {
   const [error, setError] = useState("");
 
   // UI state
+  const [viewMode, setViewMode] = useState("daysheet"); // "daysheet" | "timeline"
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -190,6 +193,10 @@ export default function ProductionSchedule() {
   const [filterPhase, setFilterPhase] = useState("");
   const [filterOwner, setFilterOwner] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
+
+  // Timeline-specific state
+  const [rooms, setRooms] = useState([]);
+  const [rehearsalSlots, setRehearsalSlots] = useState([]);
 
   // No event selected
   if (!currentEvent) {
@@ -226,14 +233,18 @@ export default function ProductionSchedule() {
     }
     setSchedule(sched);
 
-    const [itemsRes, milestonesRes] = await Promise.all([
+    const [itemsRes, milestonesRes, roomsRes, slotsRes] = await Promise.all([
       getScheduleItems(currentEvent.id),
       getMilestones(currentEvent.id),
+      getEventRooms(currentEvent.id),
+      getRehearsalSlots(currentEvent.id),
     ]);
 
     if (itemsRes.error) setError(itemsRes.error.message);
     setItems(itemsRes.data || []);
     setMilestones(milestonesRes.data || []);
+    setRooms(roomsRes.data || []);
+    setRehearsalSlots(slotsRes.data || []);
     setLoading(false);
   }, [currentEvent, currentOrg]);
 
@@ -370,12 +381,33 @@ export default function ProductionSchedule() {
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">{currentEvent.name}</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setEditingItem(null); }}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded-lg transition-colors"
-        >
-          <Plus size={16} /> Add Item
-        </button>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode("daysheet")}
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === "daysheet" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <LayoutList size={14} /> Day Sheet
+            </button>
+            <button
+              onClick={() => setViewMode("timeline")}
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === "timeline" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <LayoutGrid size={14} /> Timeline
+            </button>
+          </div>
+          <button
+            onClick={() => { setShowForm(true); setEditingItem(null); }}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded-lg transition-colors"
+          >
+            <Plus size={16} /> Add Item
+          </button>
+        </div>
       </div>
 
       {/* Error */}
@@ -508,8 +540,20 @@ export default function ProductionSchedule() {
         </div>
       )}
 
-      {/* Schedule Table */}
-      {filteredItems.length === 0 ? (
+      {/* Timeline View */}
+      {viewMode === "timeline" && (
+        <TimelineView
+          items={items}
+          rehearsalSlots={rehearsalSlots}
+          milestones={milestones}
+          rooms={rooms}
+          selectedDate={selectedDate}
+          onItemClick={(item) => setEditingItem(item)}
+        />
+      )}
+
+      {/* Day Sheet Table */}
+      {viewMode === "daysheet" && filteredItems.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <ClipboardList size={36} className="mx-auto mb-3 opacity-40" />
           <p className="text-sm">No items for {formatDate(selectedDate)}</p>
@@ -517,7 +561,7 @@ export default function ProductionSchedule() {
             Add the first item
           </button>
         </div>
-      ) : (
+      ) : viewMode === "daysheet" ? (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead>
@@ -586,7 +630,7 @@ export default function ProductionSchedule() {
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

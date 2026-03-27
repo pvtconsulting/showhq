@@ -115,6 +115,31 @@ export async function deleteMilestone(id) {
   return { error };
 }
 
+// ── Rooms ────────────────────────────────────────────
+
+/** Get active rooms for an event (via event_rooms join) */
+export async function getEventRooms(eventId) {
+  const { data, error } = await supabase
+    .from("event_rooms")
+    .select("room_id, rooms(id, name, capacity)")
+    .eq("event_id", eventId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  return { data: data?.map((er) => er.rooms) || [], error };
+}
+
+/** Get StagePilot rehearsal slots for an event (read-only) */
+export async function getRehearsalSlots(eventId) {
+  const { data, error } = await supabase
+    .from("slots")
+    .select("id, date, start_time, duration, status, room_id, bookings(session_id, sessions(title))")
+    .eq("event_id", eventId)
+    .neq("status", "blocked")
+    .order("date", { ascending: true })
+    .order("start_time", { ascending: true });
+  return { data, error };
+}
+
 // ── Constants ────────────────────────────────────────
 
 export const PHASES = [
