@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ClipboardList, Plus, Filter, ChevronLeft, ChevronRight, Loader2,
   Trash2, Edit3, Check, X, Diamond, AlertTriangle, Calendar,
-  LayoutList, LayoutGrid,
+  LayoutList, LayoutGrid, FileText,
 } from "lucide-react";
 import { useOrg } from "../../shell/OrgProvider.jsx";
 import {
@@ -19,6 +19,8 @@ import {
   PHASES, DEPARTMENTS, STATUSES,
 } from "./production-queries.js";
 import TimelineView from "./TimelineView.jsx";
+import DailyCallSheet from "./DailyCallSheet.jsx";
+import { useRealtimeSchedule } from "./useRealtimeSchedule.js";
 
 // ── Helpers ──────────────────────────────────────────
 
@@ -185,7 +187,7 @@ export default function ProductionSchedule() {
   const [error, setError] = useState("");
 
   // UI state
-  const [viewMode, setViewMode] = useState("daysheet"); // "daysheet" | "timeline"
+  const [viewMode, setViewMode] = useState("daysheet"); // "daysheet" | "timeline" | "callsheet"
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -262,6 +264,9 @@ export default function ProductionSchedule() {
       setSelectedDate(eventDates[0]);
     }
   }, [eventDates, selectedDate]);
+
+  // Realtime: reload data when another user changes schedule items
+  useRealtimeSchedule(currentEvent?.id, loadData);
 
   // Unique owners and locations for filter dropdowns
   const uniqueOwners = useMemo(() => {
@@ -399,6 +404,14 @@ export default function ProductionSchedule() {
               }`}
             >
               <LayoutGrid size={14} /> Timeline
+            </button>
+            <button
+              onClick={() => setViewMode("callsheet")}
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === "callsheet" ? "bg-brand-500 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <FileText size={14} /> Call Sheet
             </button>
           </div>
           <button
@@ -549,6 +562,18 @@ export default function ProductionSchedule() {
           rooms={rooms}
           selectedDate={selectedDate}
           onItemClick={(item) => setEditingItem(item)}
+        />
+      )}
+
+      {/* Call Sheet View */}
+      {viewMode === "callsheet" && schedule && (
+        <DailyCallSheet
+          scheduleId={schedule.id}
+          eventId={currentEvent.id}
+          eventName={currentEvent.name}
+          venueName={currentEvent.venue_name || null}
+          selectedDate={selectedDate}
+          items={items}
         />
       )}
 

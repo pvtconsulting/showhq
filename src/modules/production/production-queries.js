@@ -115,6 +115,47 @@ export async function deleteMilestone(id) {
   return { error };
 }
 
+// ── Daily Calls ──────────────────────────────────────
+
+/** Get or create the daily call for a schedule + date */
+export async function getOrCreateDailyCall(scheduleId, eventId, date) {
+  const { data: existing, error: fetchErr } = await supabase
+    .from("daily_calls")
+    .select("*")
+    .eq("schedule_id", scheduleId)
+    .eq("date", date)
+    .maybeSingle();
+
+  if (fetchErr) return { data: null, error: fetchErr };
+  if (existing) return { data: existing, error: null };
+
+  // Create with sensible defaults
+  const { data, error } = await supabase
+    .from("daily_calls")
+    .insert({
+      schedule_id: scheduleId,
+      event_id: eventId,
+      date,
+      general_call: "07:00",
+      estimated_wrap: "18:00",
+    })
+    .select()
+    .single();
+
+  return { data, error };
+}
+
+/** Update a daily call */
+export async function updateDailyCall(id, updates) {
+  const { data, error } = await supabase
+    .from("daily_calls")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+  return { data, error };
+}
+
 // ── Rooms ────────────────────────────────────────────
 
 /** Get active rooms for an event (via event_rooms join) */
