@@ -56,6 +56,15 @@ export async function signUp(email, password, fullName) {
   return { data, error };
 }
 
+/** Sign in with Google OAuth */
+export async function signInWithGoogle() {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin },
+  });
+  return { data, error };
+}
+
 /** Sign out */
 export const signOut = () => supabase.auth.signOut();
 
