@@ -70,7 +70,8 @@ export const MODULE_REGISTRY = {
  * Falls back to { rehearsal: enabled } if no settings exist (StagePilot-only org).
  */
 export function getEnabledModules(orgSettings) {
-  const modules = orgSettings?.modules || { rehearsal: { enabled: true } };
+  const defaults = getDefaultModules();
+  const modules = orgSettings?.modules || defaults;
   return Object.entries(MODULE_REGISTRY)
     .filter(([key]) => modules[key]?.enabled)
     .map(([, mod]) => mod);
@@ -80,21 +81,23 @@ export function getEnabledModules(orgSettings) {
  * Check if a specific module is enabled for the current org.
  */
 export function isModuleEnabled(orgSettings, moduleKey) {
-  const modules = orgSettings?.modules || { rehearsal: { enabled: true } };
+  const defaults = getDefaultModules();
+  const modules = orgSettings?.modules || defaults;
   return modules[moduleKey]?.enabled === true;
 }
 
 /**
  * Returns the default modules object for a new org.
- * StagePilot only — other modules start disabled.
+ * All modules enabled by default — orgs can disable what they don't need.
  */
 export function getDefaultModules() {
+  const now = new Date().toISOString();
   return {
-    rehearsal: { enabled: true, activated_at: new Date().toISOString() },
-    production: { enabled: false },
-    staffing: { enabled: false },
-    vendors: { enabled: false },
-    floorplans: { enabled: false },
-    eventletter: { enabled: false },
+    rehearsal: { enabled: true, activated_at: now },
+    production: { enabled: true, activated_at: now },
+    staffing: { enabled: true, activated_at: now },
+    vendors: { enabled: true, activated_at: now },
+    floorplans: { enabled: true, activated_at: now },
+    eventletter: { enabled: true, activated_at: now },
   };
 }
