@@ -12,9 +12,11 @@ import AuthPage from "./shell/AuthPage.jsx";
 import Dashboard from "./shell/Dashboard.jsx";
 import ModuleGuard from "./shell/ModuleGuard.jsx";
 
+// Real modules
+import ProductionSchedule from "./modules/production/ProductionSchedule.jsx";
+
 // Module placeholders (will be replaced with real modules in later phases)
 import RehearsalPlaceholder from "./modules/rehearsal/RehearsalPlaceholder.jsx";
-import ProductionPlaceholder from "./modules/production/ProductionPlaceholder.jsx";
 import StaffingPlaceholder from "./modules/staffing/StaffingPlaceholder.jsx";
 import VendorsPlaceholder from "./modules/vendors/VendorsPlaceholder.jsx";
 import FloorPlansPlaceholder from "./modules/floorplans/FloorPlansPlaceholder.jsx";
@@ -62,7 +64,7 @@ export default function App() {
               path="/production/*"
               element={
                 <ModuleGuard moduleKey="production">
-                  <ProductionPlaceholder />
+                  <ProductionSchedule />
                 </ModuleGuard>
               }
             />
